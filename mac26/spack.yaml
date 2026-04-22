@@ -1,0 +1,64 @@
+spack:
+  specs:
+    # Compilers / build tools
+    - cmake
+    - ccache
+    - gcc@15          # provides gfortran
+    - pkgconf
+    - swig
+    - bison
+
+    # Java (needed by CASA build tooling)
+    - openjdk@11
+
+    # OpenMP runtime for Apple Clang
+    - llvm-openmp
+
+    # Core science libraries
+    - cfitsio
+    - wcslib
+    - fftw precision=float,double  # covers fftw-3 and fftw-3-single
+    - eigen@3.4
+    - gsl
+
+    # XML / serialisation
+    - xerces-c
+    - libxml2
+    - libxslt
+
+    # MPI
+    - openmpi
+
+    # Python (CASA tested with 3.12)
+    # numpy, pip, build installed via pip/venv after activation
+    - python@3.12
+
+  packages:
+    gcc:
+      require: "@15"
+      buildable: false
+      # gcc@15 must be installed externally (e.g. brew install gcc@15 or sudo port install gcc15)
+      externals:
+        - spec: gcc@15.2.0 languages=c,c++,fortran
+          prefix: /opt/homebrew
+        - spec: gcc@15.2.0 languages=c,c++,fortran
+          prefix: /opt/local
+    protobuf:
+      buildable: false
+      externals:
+        - spec: protobuf@34.0
+          prefix: /opt/homebrew
+        - spec: protobuf@34.0
+          prefix: /opt/local
+    grpc:
+      buildable: false
+      externals:
+        - spec: grpc@1.78.1
+          prefix: /opt/homebrew
+        - spec: grpc@1.78.1
+          prefix: /opt/local
+
+  concretizer:
+    unify: true
+
+  view: true
