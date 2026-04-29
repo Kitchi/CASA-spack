@@ -1,55 +1,57 @@
 # CASA Spack Build Environment for Linux / aarch64
 
-Spack environment for CASA6 build dependencies on TACC Vista (aarch64 / NVIDIA Grace,
-Neoverse V2). Make sure to have the spack `setup-env.sh` sourced into your shell before
-running any of the below commands.
-
-```bash
-source ~/path/to/spack_install/share/spack/setup-env.sh
-```
-
-or add that line into your `~/.bashrc`.
-
-> **Note:** This build recipe is adapted from the verified x86_64 Linux recipe
-> (`casa-spack-linux`). The aarch64 build has not yet been verified end-to-end.
+Spack environment and Makefile for building CASA6 from source on Linux/aarch64.
+Currently tested on TACC Vista (NVIDIA Grace, Neoverse V2, Rocky 9).
 
 ## Prerequisites
 
-- **Spack** (https://spack.io)
-- **GCC 13.2.0** via module (`module load gcc/13.2.0`) — system gcc@11.5.0 is the
-  fallback if 13.2 causes issues
+- **Spack** v1.0+ (https://spack.io) — sourced into your shell:
 
-All other dependencies (cmake, grpc, protobuf, openmpi, python@3.12, etc.) are
-managed by Spack.
+```bash
+source ~/path/to/spack/share/spack/setup-env.sh
+```
+
+- **System GCC** — Vista uses the system gcc@11.5.0 (`/usr/bin/gcc`). CASA
+  requires gcc 4.9+ (9+ for GPU builds), so 11.5.0 is sufficient. The
+  module gcc@13.2.0 has a broken `libisl.so.23` rpath that spack cannot work
+  around, so we avoid it.
+
+All other dependencies (cmake, grpc, protobuf, openmpi, python@3.12, etc.)
+are managed by Spack.
+
+## Directory layout
+
+```
+linux-aarch64/
+  spack.yaml          # platform-independent spack env (specs, concretizer)
+  site.yaml           # gitignored symlink to your site overlay
+  sites/
+    vista.yaml        # TACC Vista externals and compiler config
+  patches/
+    libsakura-aarch64.patch   # removes x86-only -m64 flag from libsakura
+  Makefile            # CASA6 build recipe (libsakura -> casacore -> casatools -> ...)
+```
 
 ## Setup
 
-Clone this repository:
+### 1. Clone and link site overlay
 
 ```bash
-git clone <repo-url> /path/to/casa-spack-aarch64
-cd /path/to/casa-spack-aarch64/linux-aarch64
-```
-
-Link the site overlay for your cluster. Platform-specific compiler paths and
-environment tweaks live in `sites/`; `spack.yaml` includes `site.yaml` which
-is a gitignored symlink you point at the right site file:
-
-```bash
+git clone <repo-url>
+cd CASA-spack/linux-aarch64
 ln -s sites/vista.yaml site.yaml
 ```
 
-Create and install the environment:
+### 2. Create and install the spack environment
 
 ```bash
-module load gcc/13.2.0
 spack env create casa-dev spack.yaml
 spack env activate casa-dev
 spack concretize
 spack install
 ```
 
-After any changes to `spack.yaml` or the site overlay, recreate the environment:
+After changes to `spack.yaml` or the site overlay, recreate the environment:
 
 ```bash
 spack env rm casa-dev
@@ -59,48 +61,77 @@ spack concretize
 spack install
 ```
 
-### Adding a new site
+### 3. Build CASA
 
-Copy an existing site file and adjust the compiler paths / externals:
+Copy (or symlink) the Makefile into a clean build directory, activate the
+spack environment, and run:
+
+```bash
+mkdir -p ~/work/casa-build && cd ~/work/casa-build
+cp /path/to/CASA-spack/linux-aarch64/Makefile .
+spack env activate casa-dev
+make PATCHDIR=/path/to/CASA-spack/linux-aarch64/patches firstcasa
+```
+
+`PATCHDIR` is required and validated at the start of the build. It must
+point to the `patches/` directory containing the aarch64 patches.
+
+For incremental rebuilds after the initial clone:
+
+```bash
+make PATCHDIR=/path/to/CASA-spack/linux-aarch64/patches casa
+```
+
+Individual targets are also available: `libsakura`, `casacore`,
+`casacpp`, `casatools`, `casatasks`, `casashell`.
+
+### Vista-specific notes
+
+- Build on a **compute node** (`idev` or batch job), not the login node.
+  Login nodes throttle process spawning, causing intermittent
+  `/bin/sh: Operation not permitted` errors during parallel compilation.
+- Do **not** `module load gcc/13.2.0` — it's unnecessary and its broken
+  `libisl.so.23` rpath causes spack build failures.
+- Run `module purge` before activating the spack env to avoid NVIDIA
+  compilers (`nvc++`) being picked up by cmake.
+
+## Adding a new site
+
+Site overlays live in `sites/` and are included by `spack.yaml` via the
+`site.yaml` symlink. Each site file defines cluster-specific externals
+(compilers, MPI, etc.).
+
+To add a new cluster:
 
 ```bash
 cp sites/vista.yaml sites/my-cluster.yaml
-# edit sites/my-cluster.yaml
+```
+
+Edit `sites/my-cluster.yaml` to match your cluster's compiler paths and
+externals. The file contains two sections:
+
+- **`packages:`** — external package definitions (compiler paths, prefixes)
+- **`env_vars:`** (if needed) — environment variables to inject into builds
+
+Then link it:
+
+```bash
 ln -sf sites/my-cluster.yaml site.yaml
 ```
 
-## Usage
+## Patches
 
-Activate the environment before building CASA:
+The `patches/` directory contains fixes applied automatically during the build:
 
-```bash
-spack env activate casa-dev
-```
-
-Python packages (numpy, pip, build) are not managed by Spack. They are installed
-into a venv by the Makefile automatically.
-
-## Makefile
-
-The included `Makefile` is identical to the x86_64 Linux variant — no aarch64-specific
-changes are needed:
-
-- `SIMD_ARCH=GENERIC` on libsakura (no x86 SIMD assumptions)
-- `PORTABLE=ON` on casacore
-- GCC used for C, C++, and Fortran throughout (no compiler pinning)
-- ccache launcher flags on all cmake targets
-
-Copy the Makefile into a clean build directory with the spack env active, then:
-
-```bash
-make firstcasa
-```
+- **`libsakura-aarch64.patch`** — removes the hardcoded `-m64` flag (x86-only)
+  from libsakura's CMakeLists.txt and adds a `GENERIC` option to
+  `SetArchFlags.cmake`. The libsakura source already has ARM NEON support via
+  `sse2neon.h`, so only the cmake flags need fixing.
 
 ## grpc / protobuf version pinning
 
-Spack's latest grpc/protobuf/abseil-cpp versions do not form a mutually compatible
-set with the re2 version that grpc hard-pins. The following versions are known to
-work together (same constraint as x86_64):
+Spack's latest grpc/protobuf/abseil-cpp versions do not form a mutually
+compatible set. The following versions are known to work:
 
 | Package | Version |
 |---------|---------|
@@ -111,7 +142,7 @@ work together (same constraint as x86_64):
 
 See comments in `spack.yaml` for details.
 
-## Known Issues
+## Known issues
 
 ### `spack env deactivate` may corrupt PATH
 
@@ -119,12 +150,5 @@ See comments in `spack.yaml` for details.
 re-activate. This is a known Spack bug
 ([spack#48391](https://github.com/spack/spack/issues/48391)).
 
-**Workaround:** Always activate from a fresh shell rather than deactivating and
-re-activating:
-
-```bash
-# Open a new terminal, then:
-module load gcc/13.2.0
-source ~/src/spack/share/spack/setup-env.sh
-spack env activate casa-dev
-```
+**Workaround:** Always activate from a fresh shell rather than deactivating
+and re-activating.
