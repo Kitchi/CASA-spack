@@ -28,6 +28,7 @@ compilers:
       cxx: /opt/apps/gcc/13.2.0/bin/g++
       f77: /opt/apps/gcc/13.2.0/bin/gfortran
       fc: /opt/apps/gcc/13.2.0/bin/gfortran
+    modules: []
     operating_system: rocky9
     target: aarch64
     environment:
