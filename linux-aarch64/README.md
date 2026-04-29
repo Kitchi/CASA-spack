@@ -18,12 +18,6 @@ or add that line into your `~/.bashrc`.
 - **Spack** (https://spack.io)
 - **GCC 13.2.0** via module (`module load gcc/13.2.0`) — system gcc@11.5.0 is the
   fallback if 13.2 causes issues
-- **`spack compiler find`** run once after loading the gcc module to register it
-
-```bash
-module load gcc/13.2.0
-spack compiler find
-```
 
 All other dependencies (cmake, grpc, protobuf, openmpi, python@3.12, etc.) are
 managed by Spack.
@@ -34,26 +28,45 @@ Clone this repository:
 
 ```bash
 git clone <repo-url> /path/to/casa-spack-aarch64
+cd /path/to/casa-spack-aarch64/linux-aarch64
+```
+
+Link the site overlay for your cluster. Platform-specific compiler paths and
+environment tweaks live in `sites/`; `spack.yaml` includes `site.yaml` which
+is a gitignored symlink you point at the right site file:
+
+```bash
+ln -s sites/vista.yaml site.yaml
 ```
 
 Create and install the environment:
 
 ```bash
 module load gcc/13.2.0
-spack env create casa-dev /path/to/casa-spack-aarch64/spack.yaml
+spack env create casa-dev spack.yaml
 spack env activate casa-dev
 spack concretize
 spack install
 ```
 
-After any changes to `spack.yaml`, recreate the environment:
+After any changes to `spack.yaml` or the site overlay, recreate the environment:
 
 ```bash
 spack env rm casa-dev
-spack env create casa-dev /path/to/casa-spack-aarch64/spack.yaml
+spack env create casa-dev spack.yaml
 spack env activate casa-dev
 spack concretize
 spack install
+```
+
+### Adding a new site
+
+Copy an existing site file and adjust the compiler paths / externals:
+
+```bash
+cp sites/vista.yaml sites/my-cluster.yaml
+# edit sites/my-cluster.yaml
+ln -sf sites/my-cluster.yaml site.yaml
 ```
 
 ## Usage
