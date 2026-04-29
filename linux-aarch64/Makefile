@@ -32,6 +32,9 @@ NCORES              = $(shell getconf _NPROCESSORS_ONLN)
 # Spack view prefix (for library/include paths)
 SPACK_VIEW          = $(shell echo $$SPACK_ENV/.spack-env/view)
 
+# Linker: use mold for faster link times
+MOLD_FLAGS          = -fuse-ld=mold
+
 #oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 #--------------------------------------------------------------------------------------------------------
 #
@@ -101,6 +104,8 @@ libsakura:
 		-DENABLE_TEST:BOOL=OFF \
 		-DCMAKE_CXX_STANDARD=14 \
 		-DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+		-DCMAKE_SHARED_LINKER_FLAGS="$(MOLD_FLAGS)" \
+		-DCMAKE_EXE_LINKER_FLAGS="$(MOLD_FLAGS)" \
 		$(SRCDIR)/sakura-libsakura-$(LIBSAKURA_VERSION)/libsakura/ \
 		-B $(CASABUILD)/libsakura
 
@@ -132,6 +137,8 @@ casacore-configure:
 		-DBUILD_DYSCO=ON \
 		-DPORTABLE=ON \
 		-DUSE_PCH=OFF \
+		-DCMAKE_SHARED_LINKER_FLAGS="$(MOLD_FLAGS)" \
+		-DCMAKE_EXE_LINKER_FLAGS="$(MOLD_FLAGS)" \
 		$(CASASRC)/casatools/casacore \
 		-B $(CASABUILD)/casacore
 
@@ -159,6 +166,8 @@ $(CASABUILD)/casacpp/Makefile:
 		-DPKG_CONFIG_USE_CMAKE_PREFIX_PATH=$(CASAINSTALL) \
 		-DCMAKE_C_COMPILER_LAUNCHER=ccache \
 		-DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+		-DCMAKE_SHARED_LINKER_FLAGS="$(MOLD_FLAGS)" \
+		-DCMAKE_EXE_LINKER_FLAGS="$(MOLD_FLAGS)" \
 		$(CASASRC)/casatools/src/code \
 		-B $(CASABUILD)/casacpp
 
@@ -187,7 +196,7 @@ casatools-wheel: venv-build
 		. $(CASAVENVDIR)/bin/activate ; \
 		pip install build ; \
 		export CMAKE_BUILD_PARALLEL_LEVEL=$(NCORES) ; \
-		cd $(CASABUILD)/casatools; PKG_CONFIG_PATH=$(CASAINSTALL)/lib/pkgconfig CMAKE_PREFIX_PATH=$(CASAINSTALL):$(SPACK_VIEW) LDFLAGS="-L$(CASAINSTALL)/lib -L$(SPACK_VIEW)/lib" python3 -m build -o $(CASAINSTALL)/dist $(CASASRC)/casatools ; \
+		cd $(CASABUILD)/casatools; PKG_CONFIG_PATH=$(CASAINSTALL)/lib/pkgconfig CMAKE_PREFIX_PATH=$(CASAINSTALL):$(SPACK_VIEW) LDFLAGS="$(MOLD_FLAGS) -L$(CASAINSTALL)/lib -L$(SPACK_VIEW)/lib" python3 -m build -o $(CASAINSTALL)/dist $(CASASRC)/casatools ; \
 		pip uninstall -y casatools ; \
 		pip install $(CASAINSTALL)/dist/casatools*whl ; \
 		pip install casadata ; \

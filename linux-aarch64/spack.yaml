@@ -6,6 +6,7 @@ spack:
     # Build tools
     - cmake
     - ccache
+    - mold
     - pkgconf
     - swig
     - bison
