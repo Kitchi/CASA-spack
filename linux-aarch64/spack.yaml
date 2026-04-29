@@ -1,4 +1,7 @@
 spack:
+  include:
+  - site.yaml
+
   specs:
     # Build tools
     - cmake
@@ -34,10 +37,6 @@ spack:
 
     # Python (CASA tested with 3.12)
     - python@3.12
-
-  packages:
-    all:
-      compiler: [gcc@13.2.0]
 
   concretizer:
     unify: true

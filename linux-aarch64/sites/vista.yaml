@@ -1,0 +1,19 @@
+# TACC Vista (NVIDIA Grace-Grace, aarch64)
+# Rocky 9, gcc@13.2.0 from /opt/apps/gcc/13.2.0
+#
+# Setup:  cd linux-aarch64 && ln -s sites/vista.yaml site.yaml
+#         module load gcc/13.2.0
+
+packages:
+  gcc:
+    externals:
+    - spec: gcc@13.2.0 languages:='c,c++,fortran'
+      prefix: /opt/apps/gcc/13.2.0
+      extra_attributes:
+        compilers:
+          c: /opt/apps/gcc/13.2.0/bin/gcc
+          cxx: /opt/apps/gcc/13.2.0/bin/g++
+          fortran: /opt/apps/gcc/13.2.0/bin/gfortran
+        environment:
+          prepend_path:
+            LD_LIBRARY_PATH: /opt/apps/gcc/13.2.0/lib
