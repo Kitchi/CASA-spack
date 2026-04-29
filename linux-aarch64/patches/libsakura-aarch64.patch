@@ -1,0 +1,36 @@
+--- a/libsakura/src/CMakeLists.txt
++++ b/libsakura/src/CMakeLists.txt
+@@ -58,7 +58,13 @@
+ set(VECT_VERB "" CACHE STRING "vectorization verbose compile option, such as -fopt-info-vec-optimized -fopt-info-vec-missed -ftree-vectorizer-verbose=2")
+ set(PROF_MODE "" CACHE STRING "-fprofile-generate or -fprofile-use -fprofile-correction for GCC")
+
+-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -Wall -Wno-deprecated-register -fPIC -pipe")
++set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe")
++if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
++    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -Wno-deprecated-register")
++endif()
++if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
++    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-register")
++endif()
+
+ message("CMAKE_CXX_COMPILER_ID is ${CMAKE_CXX_COMPILER_ID}")
+
+--- a/libsakura/cmake-modules/SetArchFlags.cmake
++++ b/libsakura/cmake-modules/SetArchFlags.cmake
+@@ -28,11 +28,15 @@
+ 	# not supported yet
+ endif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+
++set(GenericArch "")
++
+ macro(set_cxx_flags_from_arch SIMD_ARCH)
+ 	if("${SIMD_ARCH}" STREQUAL "NATIVE")
+ 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NativeArch}")
+ 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${NativeArch}")
+-	elseif("${SIMD_ARCH}" STREQUAL "AVX2")
++	elseif("${SIMD_ARCH}" STREQUAL "GENERIC")
++		# No architecture-specific flags — portable scalar/autovectorized code
++	elseif("${SIMD_ARCH}" STREQUAL "AVX2")
+ 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${HaswellArch}")
+ 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${HaswellArch}")
+ 	elseif("${SIMD_ARCH}" STREQUAL "AVX")

@@ -10,6 +10,9 @@
 #   Copy this Makefile into a clean build directory with the spack env active,
 #   then: make firstcasa
 
+# Path to patches directory (defaults to patches/ next to this Makefile)
+PATCHDIR    ?= $(dir $(lastword $(MAKEFILE_LIST)))patches
+
 CASA_BRANCH         = master
 CASA_REPO           = https://open-bitbucket.nrao.edu:/scm/casa/casa6.git
 CASACORE_DATA_REPO  = ftp://ftp.astron.nl/outgoing/Measures/WSRT_Measures.ztar
@@ -61,6 +64,7 @@ casa-clone: init
 
 libsakura:
 	curl -L https://github.com/tnakazato/sakura/archive/refs/tags/libsakura-$(LIBSAKURA_VERSION).tar.gz | gunzip | tar -xvf - -C $(SRCDIR)
+	cd $(SRCDIR)/sakura-libsakura-$(LIBSAKURA_VERSION) && patch -p1 < $(PATCHDIR)/libsakura-aarch64.patch
 
 	mkdir -p $(CASABUILD)/libsakura
 	cmake  \
@@ -72,6 +76,8 @@ libsakura:
 		-DPYTHON_BINDING:BOOL=OFF \
 		-DSIMD_ARCH=GENERIC \
 		-DENABLE_TEST:BOOL=OFF \
+		-DCMAKE_CXX_STANDARD=14 \
+		-DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 		$(SRCDIR)/sakura-libsakura-$(LIBSAKURA_VERSION)/libsakura/ \
 		-B $(CASABUILD)/libsakura
 
