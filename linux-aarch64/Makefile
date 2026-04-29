@@ -203,7 +203,7 @@ casatools-wheel: venv-build
 		. $(CASAVENVDIR)/bin/activate ; \
 		pip install build ; \
 		export CMAKE_BUILD_PARALLEL_LEVEL=$(NCORES) ; \
-		cd $(CASABUILD)/casatools; PKG_CONFIG_PATH=$(CASAINSTALL)/lib/pkgconfig CMAKE_PREFIX_PATH=$(CASAINSTALL):$(SPACK_VIEW) LDFLAGS="$(MOLD_FLAGS) -L$(CASAINSTALL)/lib -L$(SPACK_VIEW)/lib" python3 -m build -o $(CASAINSTALL)/dist $(CASASRC)/casatools ; \
+		cd $(CASABUILD)/casatools; PKG_CONFIG_PATH=$(CASAINSTALL)/lib/pkgconfig CMAKE_PREFIX_PATH=$(CASAINSTALL):$(SPACK_VIEW) LDFLAGS="$(MOLD_FLAGS) -L$(CASAINSTALL)/lib -L$(SPACK_VIEW)/lib" python3 -m build -n -o $(CASAINSTALL)/dist -C="--build-option=--mod-closure" $(CASASRC)/casatools ; \
 		pip uninstall -y casatools ; \
 		pip install $(CASAINSTALL)/dist/casatools*whl ; \
 		pip install casadata ; \
