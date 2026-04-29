@@ -10,8 +10,11 @@
 #   Copy this Makefile into a clean build directory with the spack env active,
 #   then: make firstcasa
 
-# Path to patches directory (defaults to patches/ next to this Makefile)
-PATCHDIR    ?= $(dir $(lastword $(MAKEFILE_LIST)))patches
+# Path to patches directory — must be set by user
+PATCHDIR    ?=
+ifneq ($(PATCHDIR),)
+PATCHDIR    := $(realpath $(PATCHDIR))
+endif
 
 CASA_BRANCH         = master
 CASA_REPO           = https://open-bitbucket.nrao.edu:/scm/casa/casa6.git
@@ -43,7 +46,24 @@ CASABUILD   = $(ROOT)/build
 #--------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------
 
-firstcasa: init casa-clone libsakura casacore casacpp venv-build casatools casatasks casashell
+check-patchdir:
+	@if [ -z "$(PATCHDIR)" ]; then \
+		echo ""; \
+		echo "ERROR: PATCHDIR is not set."; \
+		echo ""; \
+		echo "  Set it to the spack_env/patches directory, e.g.:"; \
+		echo "  make PATCHDIR=/path/to/CASA-spack/linux-aarch64/patches ..."; \
+		echo ""; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(PATCHDIR)" ]; then \
+		echo ""; \
+		echo "ERROR: PATCHDIR=$(PATCHDIR) does not exist."; \
+		echo ""; \
+		exit 1; \
+	fi
+
+firstcasa: check-patchdir init casa-clone libsakura casacore casacpp venv-build casatools casatasks casashell
 	@echo  ========================================
 	@echo  CASA has been built successfully.
 	@echo You can run it with:
@@ -51,7 +71,7 @@ firstcasa: init casa-clone libsakura casacore casacpp venv-build casatools casat
 	@echo $$ python
 	@echo \>\>\> import casatasks
 
-casa: libsakura casacore casacpp venv-build casatools casatasks casashell
+casa: check-patchdir libsakura casacore casacpp venv-build casatools casatasks casashell
 
 clean:
 	rm -rf $(SRCDIR) $(CASASRC) $(CASABUILD) $(CASAINSTALL) $(CASATESTDIR) $(CASAVENVDIR)
