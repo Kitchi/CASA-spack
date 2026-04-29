@@ -1,23 +1,20 @@
 # TACC Vista (NVIDIA Grace-Grace, aarch64)
-# Rocky 9, gcc@13.2.0 from /opt/apps/gcc/13.2.0
+# Rocky 9, system gcc@11.5.0 (/usr/bin/gcc)
 #
 # Setup:  cd linux-aarch64 && ln -s sites/vista.yaml site.yaml
-#         module load gcc/13.2.0
 #
-# Vista's gcc 13.2.0 install doesn't rpath libisl.so.23 into cc1, so we
-# inject LD_LIBRARY_PATH via env_vars (spack v1.0+ build environment).
+# Uses system gcc 11.5.0 rather than the module gcc 13.2.0, which has a
+# broken libisl.so.23 rpath in cc1 that spack cannot work around (spack
+# strips LD_LIBRARY_PATH in the build sandbox). CASA requires gcc 4.9+
+# (9+ for GPU builds), so 11.5.0 is sufficient.
 
 packages:
   gcc:
     externals:
-    - spec: gcc@13.2.0 languages:='c,c++,fortran'
-      prefix: /opt/apps/gcc/13.2.0
+    - spec: gcc@11.5.0 languages:='c,c++,fortran'
+      prefix: /usr
       extra_attributes:
         compilers:
-          c: /opt/apps/gcc/13.2.0/bin/gcc
-          cxx: /opt/apps/gcc/13.2.0/bin/g++
-          fortran: /opt/apps/gcc/13.2.0/bin/gfortran
-
-env_vars:
-  prepend_path:
-    LD_LIBRARY_PATH: /opt/apps/gcc/13.2.0/lib
+          c: /usr/bin/gcc
+          cxx: /usr/bin/g++
+          fortran: /usr/bin/gfortran
