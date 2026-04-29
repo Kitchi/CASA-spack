@@ -29,6 +29,9 @@ CASASHELL_BRANCH    = master
 # Number of cores used for compilation (default: all available in the machine)
 NCORES              = $(shell getconf _NPROCESSORS_ONLN)
 
+# Spack view prefix (for library/include paths)
+SPACK_VIEW          = $(shell echo $$SPACK_ENV/.spack-env/view)
+
 #oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 #--------------------------------------------------------------------------------------------------------
 #
@@ -184,7 +187,7 @@ casatools-wheel: venv-build
 		. $(CASAVENVDIR)/bin/activate ; \
 		pip install build ; \
 		export CMAKE_BUILD_PARALLEL_LEVEL=$(NCORES) ; \
-		cd $(CASABUILD)/casatools; PKG_CONFIG_PATH=$(CASAINSTALL)/lib/pkgconfig python3 -m build -o $(CASAINSTALL)/dist $(CASASRC)/casatools ; \
+		cd $(CASABUILD)/casatools; PKG_CONFIG_PATH=$(CASAINSTALL)/lib/pkgconfig CMAKE_PREFIX_PATH=$(CASAINSTALL):$(SPACK_VIEW) LDFLAGS="-L$(CASAINSTALL)/lib -L$(SPACK_VIEW)/lib" python3 -m build -o $(CASAINSTALL)/dist $(CASASRC)/casatools ; \
 		pip uninstall -y casatools ; \
 		pip install $(CASAINSTALL)/dist/casatools*whl ; \
 		pip install casadata ; \
