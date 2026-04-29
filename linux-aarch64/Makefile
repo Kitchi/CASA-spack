@@ -213,6 +213,7 @@ casatasks-wheel: venv-build
 	# Disable any potentially running virtual environments beforehand
 	-deactivate ; \
 		. $(CASAVENVDIR)/bin/activate ; \
+		export LD_LIBRARY_PATH=$(CASAINSTALL)/lib:$(SPACK_VIEW)/lib$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} ; \
 		pip install --upgrade setuptools ; \
 		pip install --upgrade wheel ; \
 		mkdir -p $(HOME)/.casa/data ; \
@@ -232,6 +233,7 @@ casashell-wheel: venv-build
 	# Disable any potentially running virtual environments beforehand
 	-deactivate ; \
 		. $(CASAVENVDIR)/bin/activate ; \
+		export LD_LIBRARY_PATH=$(CASAINSTALL)/lib:$(SPACK_VIEW)/lib$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} ; \
 		cd $(SRCDIR)/casashell ; \
 		./setup.py bdist_wheel ; \
 		pip uninstall -y casashell ; \
