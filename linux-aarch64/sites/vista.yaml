@@ -3,6 +3,11 @@
 #
 # Setup:  cd linux-aarch64 && ln -s sites/vista.yaml site.yaml
 #         module load gcc/13.2.0
+#
+# Note: The compilers: section is deprecated in spack v1.0+ but is still
+# the only mechanism that reliably injects environment variables into builds.
+# The extra_attributes.environment block under packages: externals does NOT
+# work as of spack v1.2dev.
 
 packages:
   gcc:
@@ -14,6 +19,17 @@ packages:
           c: /opt/apps/gcc/13.2.0/bin/gcc
           cxx: /opt/apps/gcc/13.2.0/bin/g++
           fortran: /opt/apps/gcc/13.2.0/bin/gfortran
-        environment:
-          prepend_path:
-            LD_LIBRARY_PATH: /opt/apps/gcc/13.2.0/lib
+
+compilers:
+- compiler:
+    spec: gcc@=13.2.0
+    paths:
+      cc: /opt/apps/gcc/13.2.0/bin/gcc
+      cxx: /opt/apps/gcc/13.2.0/bin/g++
+      f77: /opt/apps/gcc/13.2.0/bin/gfortran
+      fc: /opt/apps/gcc/13.2.0/bin/gfortran
+    operating_system: rocky9
+    target: aarch64
+    environment:
+      prepend_path:
+        LD_LIBRARY_PATH: /opt/apps/gcc/13.2.0/lib
