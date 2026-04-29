@@ -19,4 +19,5 @@ packages:
           fortran: /opt/apps/gcc/13.2.0/bin/gfortran
 
 env_vars:
-  LD_LIBRARY_PATH: /opt/apps/gcc/13.2.0/lib
+  prepend_path:
+    LD_LIBRARY_PATH: /opt/apps/gcc/13.2.0/lib
