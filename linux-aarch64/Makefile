@@ -33,7 +33,10 @@ NCORES              = $(shell getconf _NPROCESSORS_ONLN)
 SPACK_VIEW          = $(shell echo $$SPACK_ENV/.spack-env/view)
 
 # Linker: use mold for faster link times
-MOLD_FLAGS          = -fuse-ld=mold
+# gcc <12 doesn't support -fuse-ld=mold; we create a directory with
+# ld symlinked to mold and use -B to point gcc at it.
+MOLD_DIR            = $(CASABUILD)/.mold-bin
+MOLD_FLAGS          = -B$(MOLD_DIR)
 
 #oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 #--------------------------------------------------------------------------------------------------------
@@ -69,7 +72,11 @@ check-patchdir:
 		exit 1; \
 	fi
 
-firstcasa: check-patchdir init casa-clone libsakura casacore casacpp venv-build casatools casatasks casashell
+mold-setup:
+	@mkdir -p $(MOLD_DIR)
+	@ln -sf $(SPACK_VIEW)/bin/mold $(MOLD_DIR)/ld
+
+firstcasa: check-patchdir mold-setup init casa-clone libsakura casacore casacpp venv-build casatools casatasks casashell
 	@echo  ========================================
 	@echo  CASA has been built successfully.
 	@echo You can run it with:
@@ -77,7 +84,7 @@ firstcasa: check-patchdir init casa-clone libsakura casacore casacpp venv-build 
 	@echo $$ python
 	@echo \>\>\> import casatasks
 
-casa: check-patchdir libsakura casacore casacpp venv-build casatools casatasks casashell
+casa: check-patchdir mold-setup libsakura casacore casacpp venv-build casatools casatasks casashell
 
 clean:
 	rm -rf $(SRCDIR) $(CASASRC) $(CASABUILD) $(CASAINSTALL) $(CASATESTDIR) $(CASAVENVDIR)
